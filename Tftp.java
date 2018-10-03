@@ -62,13 +62,11 @@ public class Tftp {
 	}
 	
 	private static void sendFileName(String fileName,InetAddress addr, int port,Stats stats) throws IOException {
-		TFtpPacketV18.OpCode op = TFtpPacketV18.OpCode.OP_WRQ;
-		TFtpPacketV18 pk = new TFtpPacketV18(op);
 		
-		byte[] payload = new byte[MAX_SIZE];
+		TFtpPacketV18 pk = new TFtpPacketV18(TFtpPacketV18.OpCode.OP_WRQ);
 		
 		pk.putBytes(fileName.getBytes());
-		pk.putByte(0);
+		pk.putByte(0);//short
 		pk.putBytes(MODE.getBytes());
 		pk.putByte(0);
 		
@@ -115,16 +113,16 @@ public class Tftp {
 		String fileName;
 		
 		switch (args.length) {
-	    case 3:
-	        server = InetAddress.getByName(args[0]);
-	        port = Integer.valueOf(args[1]);
-	        fileName = args[2];
-	        socket = new DatagramSocket();
-	    	seq = 0;
-	        break;
-	    default:
-	        System.out.printf("usage: java %s server port filename\n", Tftp.class.getName());
-	        return;
+		    case 3:
+		        server = InetAddress.getByName(args[0]);
+		        port = Integer.valueOf(args[1]);
+		        fileName = args[2];
+		        socket = new DatagramSocket();
+		    	seq = 0;
+		        break;
+		    default:
+		        System.out.printf("usage: java %s server port filename\n", Tftp.class.getName());
+		        return;
 	}
 
 		Stats stats = new Stats();
