@@ -1,21 +1,35 @@
 
 public class Stats {
 
+	//Constants
+	public static final float ALPHA = 0.125f;
+	public static final float BETA = 0.250f;
+	
+	
+	//Vars
 	private int totalDataBlocks = 0;
 	private int totalAcks = 0;
 	private int totalBytes = 0;
 	private long startTime = 0L;
 	
 	//RTT
-	private int rtt;
-	private static int sumOfRtt;
-	private static int rttSumLenght;
+	
+	private int devRTT;
+	private int estimatedRTT;
+	private int timeoutValue;
+	
+	private int maxRTT;
+	private int minRTT;
 	
 	Stats() {
 		startTime = System.currentTimeMillis();
-		rtt = 20;
-		sumOfRtt = rtt;
-		rttSumLenght = 1;
+		
+		estimatedRTT = 50;
+		devRTT = 5;
+		timeoutValue = estimatedRTT;
+		
+		maxRTT = Integer.MIN_VALUE;
+		minRTT = Integer.MAX_VALUE;
 	}
 
 	public void updateBytesRead(int bytesRead) {
@@ -28,13 +42,17 @@ public class Stats {
 	}
 	
 	public int getRTT() {
-		return rtt;
+		return timeoutValue;
 	}
 	
-	public void updateRTT(long currentRTT) {
-		sumOfRtt += Math.round(currentRTT);
-		rttSumLenght++;
-		rtt = rtt > 1 ? Math.round(sumOfRtt / rttSumLenght) : 1;
+	public void updateRTT(long sampleRTT) {
+		//UPDATE max and min rtt during file transfer
+		maxRTT = (int)(sampleRTT > maxRTT ? sampleRTT : maxRTT); 
+		minRTT = (int)(sampleRTT < minRTT ? sampleRTT : minRTT); 
+		
+		estimatedRTT = Math.round(estimatedRTT * (1 - ALPHA) + sampleRTT*ALPHA);
+		devRTT = Math.round((1 - BETA)*devRTT + BETA * Math.abs(sampleRTT - estimatedRTT));
+		timeoutValue = estimatedRTT + 4*devRTT;
 	}
 	
 // any other methods
@@ -49,8 +67,9 @@ public class Stats {
 		System.out.printf("End-to-end transfer rate:\t%.3f M bps\n", speed);
 		System.out.println("Number of data messages sent:\t\t\t" + totalDataBlocks);
 		System.out.println("Number of Acks received:\t\t\t" + totalAcks);
-		System.out.println("Last RTT Used:\t\t\t" + rtt);
+		System.out.println("Last Timeout Used:\t\t\t" + timeoutValue);
+		System.out.println("Max RTT:\t\t\t" + maxRTT);
+		System.out.println("Min RTT:\t\t\t" + minRTT);
 		
-
 	}
 }
