@@ -21,19 +21,21 @@ public class Window {
 	
 	public void putDatagramPacket(DatagramPacket packet) throws IOException{
 		if(!isFull()) {
-			packetsWindow.add(new DatagramNode(packet,stats.getRTT()));
+			packetsWindow.add(new DatagramNode(packet,stats.getTimeOut()));
 			socket.send(packet);
 		}
 	}
 	
-	public boolean removeDatagramPacket(int seqNumber,int rtt) throws IOException {
+	public boolean removeDatagramPacket(int seqNumber) throws IOException {
 		if(!isEmpty()) {
 				
 				if(isFirst(seqNumber)) {
+					stats.updateRTT(System.currentTimeMillis() - packetsWindow.get(0).getTimeSent());
 					packetsWindow.remove(0);
 					return true;
-				}else 
-					this.goBackN(rtt);
+				}else {
+					this.goBackN();
+				}
 		}
 		return false;
 	}
@@ -50,14 +52,14 @@ public class Window {
 		return packetsWindow.isEmpty();
 	}
 	
-	public void goBackN(int rtt) throws IOException {
+	public void goBackN() throws IOException {
 		Iterator<DatagramNode> it = packetsWindow.iterator();
 		DatagramNode next;
 		
 		while(it.hasNext()) {
 			next = it.next();
+			next.updateTimeOut(stats.getTimeOut());
 			socket.send(next.getDatagram());
-			next.updateTimeOut(rtt);
 		}
 	}
 	
@@ -66,9 +68,9 @@ public class Window {
 	}
 	
 	public long getPacketTimeSent(){
-		if(isEmpty())
-			return stats.getRTT();
-		
+		if(isEmpty()) {
+			return stats.getTimeOut();
+		}
 		return packetsWindow.get(0).getTimeSent();
 	}
 	

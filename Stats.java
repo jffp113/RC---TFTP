@@ -2,7 +2,7 @@
 public class Stats {
 
 	//Constants
-	public static final float ALPHA = 0.125f;
+	public static final float ALPHA = 0.250f;
 	public static final float BETA = 0.250f;
 	
 	
@@ -41,7 +41,7 @@ public class Stats {
 		totalAcks++;
 	}
 	
-	public int getRTT() {
+	public int getTimeOut() {
 		return timeoutValue;
 	}
 	

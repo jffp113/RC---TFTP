@@ -18,13 +18,14 @@ public class Tftp {
 	private static DatagramSocket socket;
 	private static int port;
 	private static short seq;
+	private static int maxBlockSize;
 	
 	private static void updateSeq() {
 		seq = (short) (++seq % 32768);
 	}
 	
 	private static void inicialProtocol(DatagramPacket data,Stats stats) throws IOException {
-		byte[] ackMen = new byte[MAX_SIZE];
+		byte[] ackMen = new byte[maxBlockSize];
 		DatagramPacket ack = new DatagramPacket(ackMen, ackMen.length);
 		TFtpPacketV18 ackPk = null;
 		long startTime = System.currentTimeMillis();
@@ -32,7 +33,7 @@ public class Tftp {
 		
 		socket.send(data);
 		while(true) {
-			socket.setSoTimeout(stats.getRTT());
+			socket.setSoTimeout(stats.getTimeOut());
 			try {
 				socket.receive(ack);
 				endTime = System.currentTimeMillis();
@@ -46,6 +47,12 @@ public class Tftp {
 					seq == ackPk.getBlockNumber()) {
 					updateSeq();
 					stats.updateAck();
+					maxBlockSize = MAX_SIZE;
+					System.out.println(maxBlockSize);
+					break;
+				}
+				else if(TFtpPacketV18.OpCode.OP_OACK.equals(ackPk.getOpCode())) {
+					maxBlockSize = Integer.parseInt(ackPk.getOptionValue("blksize"));
 					break;
 				}
 			
@@ -67,6 +74,8 @@ public class Tftp {
 		pk.putByte(0);//short
 		pk.putBytes(MODE.getBytes());
 		pk.putByte(0);
+		//pk.putShort(maxBlockSize);
+		//pk.putByte(0);
 		
 		DatagramPacket packet = pk.toDatagramPacket(new InetSocketAddress(addr, port));
 		inicialProtocol(packet,stats);
@@ -74,36 +83,29 @@ public class Tftp {
 	}
 		
 	public static void ackReceiveFile(Window packetWindow,Stats stats) throws IOException {
-		byte[] ackMen = new byte[MAX_SIZE];
+		byte[] ackMen = new byte[maxBlockSize];
 		DatagramPacket ack = new DatagramPacket(ackMen, ackMen.length);
 		TFtpPacketV18 ackPk = null;
-		boolean successACK = false;
-		long packetTimeSent;
 		int timeout;
 		
 		timeout = packetWindow.getFirstTimeOut();
 		if(timeout > 0)
-			socket.setSoTimeout(packetWindow.getFirstTimeOut());
+			socket.setSoTimeout(timeout);
 		else {
-			packetWindow.goBackN(stats.getRTT());
-			socket.setSoTimeout(stats.getRTT());
+			packetWindow.goBackN();
+			socket.setSoTimeout(stats.getTimeOut());
 		}
+		
 		try {
 			socket.receive(ack);
 			stats.updateAck();
-			packetTimeSent = packetWindow.getPacketTimeSent();
 			
 			//Remove The block if seq number match else GBN
 			ackPk = new TFtpPacketV18(ackMen,ack.getLength());
-			successACK = packetWindow.removeDatagramPacket(ackPk.getBlockNumber(),stats.getRTT());
+			packetWindow.removeDatagramPacket(ackPk.getBlockNumber());
 			
-			//Update RTT time 
-			if(successACK)
-				stats.updateRTT(System.currentTimeMillis() - packetTimeSent);
-		
 		}catch(SocketTimeoutException e) {
-			packetWindow.goBackN(stats.getRTT());
-			System.out.println("Timeout");
+			packetWindow.goBackN();
 		}
 		
 		
@@ -114,10 +116,11 @@ public class Tftp {
 		Window packetWindow = new Window(WINDOW_SIZE,socket,stats); 
 		int bytesRead = -1;
 		boolean lastFullSize = false;
-		byte[] fileContent = new byte[MAX_SIZE];
-		TFtpPacketV18 pk = null;
 		
 		sendFileName(fileName,server,port,stats);
+		
+		byte[] fileContent = new byte[maxBlockSize];
+		TFtpPacketV18 pk = null;
 		
 		while(in.available() != 0 || !packetWindow.isEmpty()) {
 			
@@ -128,12 +131,10 @@ public class Tftp {
 				packetWindow.putDatagramPacket(pk.toDatagramPacket(new InetSocketAddress(server, port)));
 				seq++;
 				stats.updateBytesRead(bytesRead);
-				
-				lastFullSize = bytesRead == MAX_SIZE;
+				lastFullSize = bytesRead == maxBlockSize;
 			}
-	
-			ackReceiveFile(packetWindow,stats);
 			
+			ackReceiveFile(packetWindow,stats);
 		}
 		
 		if(lastFullSize) {
@@ -146,7 +147,6 @@ public class Tftp {
 		socket.close();
 	}
 	
-	
 	public static void main(String[] args) throws Exception {
 		InetAddress server;
 		//int port;
@@ -154,16 +154,24 @@ public class Tftp {
 		
 		switch (args.length) {
 			case 4: 
-				
+				server = InetAddress.getByName(args[0]);
+			    port = Integer.valueOf(args[1]);
+			    fileName = args[2];
+			    socket = new DatagramSocket();
+			    seq = 0;
+				maxBlockSize = Integer.valueOf(args[3]);
+				break;
 		    case 3:
 		        server = InetAddress.getByName(args[0]);
 		        port = Integer.valueOf(args[1]);
 		        fileName = args[2];
 		        socket = new DatagramSocket();
 		    	seq = 0;
+		    	maxBlockSize = MAX_SIZE; 
 		        break;
 		    default:
-		        System.out.printf("usage: java %s server port filename\n", Tftp.class.getName());
+		        System.out.printf("usage: java %s server port filename (blkSize)* \n", Tftp.class.getName());
+		        System.out.printf("All options surrounded by * are optional\n");
 		        return;
 	}
 
