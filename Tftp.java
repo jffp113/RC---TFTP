@@ -24,14 +24,23 @@ public class Tftp {
 		seq = (short) (++seq % 32768);
 	}
 	
-	private static void inicialProtocol(DatagramPacket data,Stats stats) throws IOException {
+	/**
+	 * This function starts the initial Protocol
+	 * First it sends a write request
+	 * This method allows to receive OACk (Options Acknowledge) with a different block size
+	 * This method will try N times to establish a connection before giving up 
+	 * @param writeRequest
+	 * @param stats
+	 * @throws IOException
+	 */
+	private static void inicialProtocol(DatagramPacket writeRequest,Stats stats) throws IOException {
 		byte[] ackMen = new byte[maxBlockSize];
 		DatagramPacket ack = new DatagramPacket(ackMen, ackMen.length);
 		TFtpPacketV18 ackPk = null;
 		long startTime = System.currentTimeMillis();
 		long endTime = 0;
 		
-		socket.send(data);
+		socket.send(writeRequest);
 		while(true) {
 			socket.setSoTimeout(stats.getTimeOut());
 			try {
@@ -51,6 +60,7 @@ public class Tftp {
 					break;
 				}
 				else if(TFtpPacketV18.OpCode.OP_OACK.equals(ackPk.getOpCode())) {
+					//Receive a OAck in order to change blockSize
 					maxBlockSize = Integer.parseInt(ackPk.getOptionValue("blksize"));
 					updateSeq();
 					stats.updateAck();
@@ -62,11 +72,19 @@ public class Tftp {
 			}
 			catch(SocketTimeoutException e) {
 				startTime = System.currentTimeMillis();
-				socket.send(data);
+				socket.send(writeRequest);
 			}
 		}
 	}
 	
+	/**
+	 * 
+	 * @param fileName
+	 * @param addr
+	 * @param port
+	 * @param stats
+	 * @throws IOException
+	 */
 	private static void sendFileName(String fileName,InetAddress addr, int port,Stats stats) throws IOException {
 		
 		TFtpPacketV18 pk = new TFtpPacketV18(TFtpPacketV18.OpCode.OP_WRQ);
