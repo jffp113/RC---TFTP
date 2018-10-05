@@ -52,6 +52,8 @@ public class Tftp {
 				}
 				else if(TFtpPacketV18.OpCode.OP_OACK.equals(ackPk.getOpCode())) {
 					maxBlockSize = Integer.parseInt(ackPk.getOptionValue("blksize"));
+					updateSeq();
+					stats.updateAck();
 					break;
 				}
 			
@@ -73,9 +75,13 @@ public class Tftp {
 		pk.putByte(0);//short
 		pk.putBytes(MODE.getBytes());
 		pk.putByte(0);
-		//pk.putShort(maxBlockSize);
-		//pk.putByte(0);
 		
+		if(maxBlockSize > MAX_SIZE) {
+			pk.putBytes("blksize".getBytes());
+			pk.putByte(0);
+			pk.putBytes(String.valueOf(maxBlockSize).getBytes());
+			pk.putByte(0);
+		}
 		DatagramPacket packet = pk.toDatagramPacket(new InetSocketAddress(addr, port));
 		inicialProtocol(packet,stats);
 		
@@ -124,7 +130,7 @@ public class Tftp {
 		while(in.available() != 0 || !packetWindow.isEmpty()) {
 			
 			while(!packetWindow.isFull() && (bytesRead = in.read(fileContent)) != -1) {
-				pk = new TFtpPacketV18(TFtpPacketV18.OpCode.OP_DATA);
+				pk = new TFtpPacketV18(TFtpPacketV18.OpCode.OP_DATA,maxBlockSize);
 				pk.putShort(seq);
 				pk.putBytes(fileContent,bytesRead);
 				packetWindow.putDatagramPacket(pk.toDatagramPacket(new InetSocketAddress(server, port)));

@@ -1,3 +1,4 @@
+
 import java.net.DatagramPacket;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -29,6 +30,15 @@ public class TFtpPacketV18 {
 	 **/
 	public TFtpPacketV18( OpCode opcode ) {
 		this.bb = ByteBuffer.allocate(MAX_TFTP_DATAGRAM_SIZE);
+		this.putShort( opcode.toShort() );
+	}
+	
+	/**
+	 * Constructor for creating a new, initially, empty TftpPacket of a given OpCode.
+	 * 
+	 **/
+	public TFtpPacketV18( OpCode opcode , int tftpBlockSize) {
+		this.bb = ByteBuffer.allocate(UDP_HEADER_SIZE + tftpBlockSize);
 		this.putShort( opcode.toShort() );
 	}
 	
@@ -137,8 +147,9 @@ public class TFtpPacketV18 {
 		OpCode opcode = this.getOpCode();
 		if( opcode == OpCode.OP_OACK ) {
 			String[] data = new String( bb.array(), 2, bb.limit() - 2).split("\0");
+			System.err.println( Arrays.asList(data));
 			int index = Arrays.asList( data ).indexOf( option );
-			return index > 0 ? data[index+1] : null;
+			return index >= 0 ? data[index+1] : null;
 		}
 		else 
 			throw new IllegalAccessError("Operation not compatible with packet opcode...");
