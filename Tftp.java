@@ -13,7 +13,7 @@ public class Tftp {
 	
 	private static final int MAX_SIZE = 512;
 	private static final String MODE = "octet";
-	private static final int WINDOW_SIZE = 5;
+	private static final int WINDOW_SIZE = 10;
 	
 	private static DatagramSocket socket;
 	private static int port;
@@ -48,7 +48,6 @@ public class Tftp {
 					updateSeq();
 					stats.updateAck();
 					maxBlockSize = MAX_SIZE;
-					System.out.println(maxBlockSize);
 					break;
 				}
 				else if(TFtpPacketV18.OpCode.OP_OACK.equals(ackPk.getOpCode())) {

@@ -24,8 +24,8 @@ public class Stats {
 	Stats() {
 		startTime = System.currentTimeMillis();
 		
-		estimatedRTT = 50;
-		devRTT = 5;
+		estimatedRTT = 100;
+		devRTT = 10;
 		timeoutValue = estimatedRTT;
 		
 		maxRTT = Integer.MIN_VALUE;

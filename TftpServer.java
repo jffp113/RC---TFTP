@@ -104,6 +104,12 @@ public class TftpServer {
 					int n = msg.getLength() - 4; // received block size
 					f.write( msg.getData(), 4, n );			
 					System.out.printf("received: %d/%d bytes\n", count, n );
+					try {
+						Thread.sleep(5);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 					sendACK(count, client, port );
 					count = ++count % 32768 ;
 					last = n < BLOCKSIZE;

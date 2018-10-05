@@ -18,7 +18,7 @@ public class DatagramNode {
 	}
 	
 	public int getTimeOut() {
-		return (int) (timeOutTime - System.currentTimeMillis());
+		return Math.round(timeOutTime - System.currentTimeMillis());
 	}
 	
 	public DatagramPacket getDatagram() {
