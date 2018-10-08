@@ -26,18 +26,23 @@ public class Window {
 		}
 	}
 	
-	public boolean removeDatagramPacket(int seqNumber) throws IOException {
-		if(!isEmpty()) {
-				
-				if(isFirst(seqNumber)) {
+	public void removeDatagramPacket(int seqNumber) throws IOException {
+		/*if(!isEmpty()) {	
+				/*if(isFirst(seqNumber)) {
 					stats.updateRTT(System.currentTimeMillis() - packetsWindow.get(0).getTimeSent());
 					packetsWindow.remove(0);
 					return true;
 				}else {
 					this.goBackN();
 				}
+		}*/
+		if(isFirst(seqNumber))
+			stats.updateRTT(System.currentTimeMillis() - packetsWindow.get(0).getTimeSent());
+			
+		while(!isEmpty() && seqNumber >= packetsWindow.get(0).getSeqNumber()) {
+			packetsWindow.remove(0);
 		}
-		return false;
+		
 	}
 	
 	private boolean isFirst(int seqNumber) {

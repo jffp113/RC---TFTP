@@ -24,9 +24,9 @@ public class Stats {
 	Stats() {
 		startTime = System.currentTimeMillis();
 		
-		estimatedRTT = 100;
+		estimatedRTT = 50;
 		devRTT = 10;
-		timeoutValue = estimatedRTT;
+		timeoutValue = 50;
 		
 		maxRTT = Integer.MIN_VALUE;
 		minRTT = Integer.MAX_VALUE;
@@ -42,6 +42,7 @@ public class Stats {
 	}
 	
 	public int getTimeOut() {
+		//return 50;
 		return timeoutValue;
 	}
 	
