@@ -1,3 +1,4 @@
+package tftp;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -8,8 +9,12 @@ import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
+import tftp.Stats;
+import tftp.TFtpPacketV18;
+import tftp.Window;
 
-public class Tftp {
+
+public class TFtp {
 	
 	private static final int MAX_SIZE = 512;
 	private static final String MODE = "octet";
@@ -148,7 +153,7 @@ public class Tftp {
 		while(in.available() != 0 || !packetWindow.isEmpty()) {
 			
 			while(!packetWindow.isFull() && (bytesRead = in.read(fileContent)) != -1) {
-				pk = new TFtpPacketV18(TFtpPacketV18.OpCode.OP_DATA,maxBlockSize);
+				pk = new TFtpPacketV18(TFtpPacketV18.OpCode.OP_DATA);
 				pk.putShort(seq);
 				pk.putBytes(fileContent,bytesRead);
 				packetWindow.putDatagramPacket(pk.toDatagramPacket(new InetSocketAddress(server, port)));
@@ -193,7 +198,7 @@ public class Tftp {
 		    	maxBlockSize = MAX_SIZE; 
 		        break;
 		    default:
-		        System.out.printf("usage: java %s server port filename (blkSize)* \n", Tftp.class.getName());
+		        System.out.printf("usage: java %s server port filename (blkSize)* \n", TFtp.class.getName());
 		        System.out.printf("All options surrounded by * are optional\n");
 		        return;
 	}

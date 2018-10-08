@@ -1,3 +1,4 @@
+package tftp;
 
 public class Stats {
 
@@ -42,7 +43,6 @@ public class Stats {
 	}
 	
 	public int getTimeOut() {
-		//return 50;
 		return timeoutValue;
 	}
 	

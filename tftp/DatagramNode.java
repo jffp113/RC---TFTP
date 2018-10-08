@@ -1,4 +1,8 @@
+package tftp;
 import java.net.DatagramPacket;
+
+import tftp.TFtpPacketV18;
+
 
 public class DatagramNode {
 	//Constants

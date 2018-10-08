@@ -1,4 +1,4 @@
-
+package tftp;
 
 /**
  * fcpServer - a very simple TFTP like server - RC FCT/UNL
@@ -15,6 +15,8 @@
 
 import java.io.*;
 import java.net.* ;
+
+import tftp.TFtpPacketV18;
 
 
 public class TftpServer {
