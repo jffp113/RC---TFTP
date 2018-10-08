@@ -1,13 +1,11 @@
 package tftp;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
-import java.net.UnknownHostException;
 
 import tftp.Stats;
 import tftp.TFtpPacketV18;
