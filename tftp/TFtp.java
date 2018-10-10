@@ -9,6 +9,7 @@ import java.net.SocketTimeoutException;
 
 import tftp.Stats;
 import tftp.TFtpPacketV18;
+import tftp.TFtpPacketV18.OpCode;
 import tftp.Window;
 
 
@@ -78,6 +79,7 @@ public class TFtp {
 				socket.send(writeRequest);
 			}
 		}
+		stats.setBlockSize(maxBlockSize);
 	}
 	
 	/**
@@ -142,7 +144,7 @@ public class TFtp {
 		Window packetWindow = new Window(WINDOW_SIZE,socket,stats); 
 		int bytesRead = -1;
 		boolean lastFullSize = false;
-		
+		stats.setWindowSize(WINDOW_SIZE);
 		sendFileName(fileName,server,port,stats);
 		
 		byte[] fileContent = new byte[maxBlockSize];
@@ -166,7 +168,21 @@ public class TFtp {
 		if(lastFullSize) {
 			pk = new TFtpPacketV18(TFtpPacketV18.OpCode.OP_DATA);
 			pk.putShort(seq);
-			socket.send(pk.toDatagramPacket(new InetSocketAddress(server, port)));
+			while(true) {
+				byte[] lastAck = new byte[maxBlockSize];
+				DatagramPacket last = new DatagramPacket(lastAck,lastAck.length);
+				DatagramPacket lastMen = pk.toDatagramPacket(new InetSocketAddress(server, port));
+				socket.send(lastMen);
+				try {
+					socket.receive(last);
+					pk = new TFtpPacketV18(lastAck,last.getLength());
+					if(pk.getBlockNumber() == seq && pk.getOpCode() == OpCode.OP_ACK)
+						break;
+					
+				}catch(SocketTimeoutException e) {
+					
+				}
+			}
 		}
 			
 		in.close();
